@@ -6,9 +6,13 @@ st.set_page_config(page_title="Apex Glider", layout="centered", page_icon="🦗"
 
 # --- GAME HTML & JAVASCRIPT ---
 game_html = """
-<div id="game-container" style="text-align: center; user-select: none; touch-action: none;">
-    <canvas id="gameCanvas" width="450" height="600" style="border:3px solid #1b5e20; border-radius: 8px; display: block; margin: 0 auto; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);"></canvas>
-    <h2 id="scoreBoard" style="color: #1b5e20; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-top: 15px;">Energy: 100 | Score: 0</h2>
+<div id="game-container" style="text-align: center; user-select: none; touch-action: none; position: relative; width: 450px; margin: 0 auto;">
+    <canvas id="gameCanvas" width="450" height="600" style="border:3px solid #1b5e20; border-radius: 8px; display: block; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);"></canvas>
+    
+    <!-- Scoreboard moved INSIDE the canvas container at the bottom -->
+    <div id="scoreBoard" style="position: absolute; bottom: 10px; left: 0; width: 100%; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;">
+        Energy: 100 | Score: 0
+    </div>
 </div>
 
 <script>
@@ -126,22 +130,47 @@ function draw() {
         ctx.fillText("🪰", f.x + f.width/2, f.y + f.height/2);
     });
 
-    // Mantis Emoji (Flipped horizontally)
+    // --- CUSTOM GREEN MANTIS ---
     ctx.save();
     ctx.translate(mantis.x + mantis.width / 2, mantis.y + mantis.height / 2);
     
-    // Calculate rotation
     let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (mantis.velocity * 0.1)));
     
-    // To make it look right, we scale by -1 on the X axis, 
-    // but because we flip the axis, we also need to invert the rotation so it tilts correctly!
+    // Scale to face right, and adjust rotation
     ctx.scale(-1, 1); 
     ctx.rotate(-rotation); 
     
-    ctx.font = "40px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("🦗", 0, 0); 
+    // Body (Green oval)
+    ctx.fillStyle = "#4caf50"; 
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 16, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Head (Darker green circle)
+    ctx.fillStyle = "#2e7d32"; 
+    ctx.beginPath();
+    ctx.arc(-14, -4, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eye (White and black dot)
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(-16, -5, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(-16.5, -5, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Front Scythe Arm (Classic mantis pose)
+    ctx.strokeStyle = "#1b5e20";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-10, 0);
+    ctx.lineTo(-18, 12);
+    ctx.lineTo(-24, 6);
+    ctx.stroke();
+
     ctx.restore();
 }
 
@@ -174,4 +203,4 @@ update();
 </script>
 """
 
-components.html(game_html, height=750)
+components.html(game_html, height=650)
