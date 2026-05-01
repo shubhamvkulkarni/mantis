@@ -25,11 +25,9 @@ def get_base64_image(file_path):
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode()
-            # Changed to image/jpeg to support your .jpg file
             return f"data:image/jpeg;base64,{encoded}" 
-    return "" # Returns empty if file isn't found
+    return "" 
 
-# Look for the background image in an 'assets' folder
 bg_img_data = get_base64_image("assets/background.jpg")
 
 # --- GAME HTML & JAVASCRIPT ---
@@ -50,17 +48,17 @@ const scoreBoard = document.getElementById("scoreBoard");
 
 // 1. Game State Variables
 let gameState = "START"; 
-let mantis = { x: 50, y: 280, width: 30, height: 30, velocity: 0, energy: 100, score: 0 }; 
+let mantis = { x: 50, y: 280, width: 35, height: 35, velocity: 0, energy: 100, score: 0 }; 
 let gravity = 0.4;
 let jumpForce = -7;
-let bgX = 0; // Tracks background scrolling
+let bgX = 0; 
 let obstacles = [];
 let food = [];
 let frame = 0;
 
 // Load Background Image
 const bgImg = new Image();
-bgImg.src = "BACKGROUND_IMAGE_DATA"; // This gets replaced by Python below
+bgImg.src = "BACKGROUND_IMAGE_DATA"; 
 
 // 2. Input Handling
 function jump() {
@@ -88,7 +86,7 @@ function createObstacle() {
 }
 
 function createFood() {
-    food.push({ x: canvas.width, y: Math.random() * (canvas.height - 80) + 40, width: 20, height: 20 });
+    food.push({ x: canvas.width, y: Math.random() * (canvas.height - 80) + 40, width: 25, height: 25 });
 }
 
 function update() {
@@ -146,7 +144,7 @@ function update() {
 
 // 4. Render 
 function draw() {
-    // Render Background Image (or fallback to blue if missing)
+    // Background Image
     if (bgImg.src && bgImg.src.startsWith("data:image")) {
         ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
         ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
@@ -164,7 +162,7 @@ function draw() {
         ctx.fillStyle = "#2e7d32"; 
     });
 
-    // Food
+    // Food (Fly Emoji)
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -172,42 +170,21 @@ function draw() {
         ctx.fillText("🪰", f.x + f.width/2, f.y + f.height/2);
     });
 
-    // Custom Green Mantis
+    // Mantis Emoji (Flipped horizontally)
     ctx.save();
     ctx.translate(mantis.x + mantis.width / 2, mantis.y + mantis.height / 2);
     
     let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (mantis.velocity * 0.1)));
     
+    // Scale by -1 to flip right, invert rotation to match
     ctx.scale(-1, 1); 
     ctx.rotate(-rotation); 
     
-    ctx.fillStyle = "#4caf50"; 
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 14, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#2e7d32"; 
-    ctx.beginPath();
-    ctx.arc(-12, -3, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(-14, -4, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(-14.5, -4, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = "#1b5e20";
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(-8, 0);
-    ctx.lineTo(-15, 10);
-    ctx.lineTo(-20, 5);
-    ctx.stroke();
-
+    ctx.font = "35px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🦗", 0, 0); 
+    
     ctx.restore();
 }
 
@@ -235,13 +212,9 @@ function endGame() {
     ctx.fillText("Tap to Restart", canvas.width / 2, canvas.height / 2 + 20);
 }
 
-// Allow the image to load before starting the loop
 setTimeout(update, 100);
 </script>
 """
 
-# Inject the image data into the Javascript
 game_html = game_html.replace("BACKGROUND_IMAGE_DATA", bg_img_data)
-
-# Component matching your requested dimensions
 components.html(game_html, height=580)
