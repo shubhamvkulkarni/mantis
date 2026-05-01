@@ -195,7 +195,7 @@ function drawStartScreen() {
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.font = "bold 32px 'Segoe UI', sans-serif";
-    ctx.fillText("APEX GLIDER", canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillText("APEX GLIDER 🦗", canvas.width / 2, canvas.height / 2 - 40);
     ctx.font = "16px 'Segoe UI', sans-serif";
     ctx.fillText("Tap to fly!", canvas.width / 2, canvas.height / 2 + 10);
 }
