@@ -4,7 +4,7 @@ import base64
 import os
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Apex Glider 🦗", layout="centered", page_icon="🦗")
+st.set_page_config(page_title="Apex Glider", layout="centered", page_icon="🦗")
 
 # --- REMOVE STREAMLIT DEFAULT PADDING ---
 st.markdown("""
