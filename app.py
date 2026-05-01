@@ -218,4 +218,4 @@ update();
 """
 
 # Streamlit component height
-components.html(game_html, height=570)
+components.html(game_html, height=580)
