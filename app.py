@@ -23,7 +23,7 @@ st.markdown("""
 # --- GAME HTML & JAVASCRIPT ---
 game_html = """
 <div id="game-container" style="text-align: center; user-select: none; touch-action: none; position: relative; width: 320px; margin: 0 auto;">
-    <canvas id="gameCanvas" width="320" height="600" style="border:3px solid #1b5e20; border-radius: 8px; display: block; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);"></canvas>
+    <canvas id="gameCanvas" width="320" height="560" style="border:3px solid #1b5e20; border-radius: 8px; display: block; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);"></canvas>
     
     <!-- Scoreboard -->
     <div id="scoreBoard" style="position: absolute; bottom: 10px; left: 0; width: 100%; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;">
@@ -218,4 +218,4 @@ update();
 """
 
 # Streamlit component height
-components.html(game_html, height=610)
+components.html(game_html, height=570)
