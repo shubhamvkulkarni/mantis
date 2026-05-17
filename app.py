@@ -92,23 +92,21 @@ function playSound(type) {
         oscillator.stop(audioCtx.currentTime + 0.3);
         
     } else if (type === 'milestone') {
-        // Uplifting 3-note chime
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
-        oscillator.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); // C#5
-        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); // E5
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); 
+        oscillator.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); 
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); 
         gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + 0.5);
         
     } else if (type === 'victory') {
-        // Triumphant 4-note fanfare
         oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
-        oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.3); // G5
-        oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.45); // C6
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); 
+        oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.3); 
+        oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.45); 
         gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
         oscillator.start();
@@ -133,7 +131,7 @@ let collisionCount = 0;
 
 let hasMilestone10 = false;
 let hasWon = false;
-let specialTapCount = 0; // Tracks taps for milestone and victory screens
+let specialTapCount = 0; 
 
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
@@ -194,7 +192,7 @@ function jump() {
             specialTapCount = 0;
             resetGame();
         } else {
-            drawVictoryScreen(); // Re-render to show updated tap count
+            drawVictoryScreen(); 
         }
     } else if (gameState === "START") {
         gameState = "PLAYING"; 
@@ -214,10 +212,18 @@ function jump() {
         if (specialTapCount >= 3) {
             specialTapCount = 0;
             gameState = "PLAYING";
+            
+            // --- SAFETY CLEAR: Gives the player a clean screen to resume ---
+            mantis.y = 280;
+            mantis.velocity = jumpForce;
+            obstacles = [];
+            food = [];
+            hearts = [];
+            
             playSound('jump');
             update();
         } else {
-            drawMilestoneScreen(); // Re-render to show updated tap count
+            drawMilestoneScreen(); 
         }
     } else {
         mantis.velocity = jumpForce;
@@ -275,7 +281,7 @@ function update() {
         hasMilestone10 = true;
         gameState = "MILESTONE_10";
         specialTapCount = 0;
-        playSound('milestone'); // Play special sound!
+        playSound('milestone'); 
         drawMilestoneScreen();
         return; 
     }
@@ -290,7 +296,7 @@ function update() {
         hasWon = true;
         gameState = "VICTORY";
         specialTapCount = 0;
-        playSound('victory'); // Play fanfare sound!
+        playSound('victory'); 
         drawVictoryScreen();
         return;
     }
@@ -507,7 +513,7 @@ function drawVictoryScreen() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.textAlign = "center";
     
-    ctx.fillStyle = "#FFD700"; // Gold
+    ctx.fillStyle = "#FFD700"; 
     ctx.font = "bold 32px 'Segoe UI', sans-serif";
     ctx.fillText("Touchdown!", canvas.width / 2, canvas.height / 2 - 50);
     
@@ -516,7 +522,7 @@ function drawVictoryScreen() {
     ctx.fillText("Bok has successfully completed", canvas.width / 2, canvas.height / 2 - 5);
     ctx.fillText("his epic quest to VJ!", canvas.width / 2, canvas.height / 2 + 20);
     
-    ctx.fillStyle = "#FFD700"; // Gold
+    ctx.fillStyle = "#FFD700"; 
     ctx.font = "bold 28px 'Segoe UI', sans-serif";
     ctx.fillText("Victory!", canvas.width / 2, canvas.height / 2 + 70);
     
