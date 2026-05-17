@@ -105,6 +105,7 @@ let frame = 0;
 let deathCount = 0; 
 let lives = 2;
 let fliesEaten = 0;
+let collisionCount = 0;
 
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
@@ -120,11 +121,19 @@ const gameOverMessages = [
     { main: "Oh no, Bok crashed!", sub: "Bangalore awaits! Tap to restart." }
 ];
 
+const collisionMessages = [
+    "Mayday! Exoskeleton compromised!",
+    "Praying for better flight controls...",
+    "Mid-air traffic collision!",
+    "Who put that obstacle there?!"
+];
+
 // --- INSTANT RESTART LOGIC ---
 function resetGame() {
     mantis = { x: 50, y: 280, width: 35, height: 35, velocity: jumpForce, score: 0 }; 
     lives = 2;
     fliesEaten = 0;
+    collisionCount = 0;
     obstacles = [];
     food = [];
     hearts = [];
@@ -145,6 +154,14 @@ function jump() {
     } else if (gameState === "START") {
         gameState = "PLAYING"; 
         mantis.velocity = jumpForce;
+        playSound('jump');
+    } else if (gameState === "PAUSED") {
+        gameState = "PLAYING";
+        mantis.y = 280;
+        mantis.velocity = jumpForce;
+        obstacles = [];
+        food = [];
+        hearts = [];
         playSound('jump');
     } else {
         mantis.velocity = jumpForce;
@@ -177,15 +194,14 @@ function handleDamage() {
     playSound('crash');
     lives--;
     
+    // Immediately update UI to show correct lives before freezing the screen
+    scoreBoard.innerHTML = `Score: ${Math.floor(mantis.score)} | ❤️: ${lives}`;
+
     if (lives <= 0) {
         endGame();
     } else {
-        // Soft reset board to continue playing
-        mantis.y = 280;
-        mantis.velocity = jumpForce;
-        obstacles = [];
-        food = [];
-        hearts = [];
+        gameState = "PAUSED";
+        collisionCount++;
     }
 }
 
@@ -198,6 +214,12 @@ function update() {
         return;
     }
 
+    if (gameState === "PAUSED") {
+        drawPauseScreen();
+        requestAnimationFrame(update);
+        return;
+    }
+
     // Physics
     mantis.velocity += gravity;
     mantis.y += mantis.velocity;
@@ -205,7 +227,7 @@ function update() {
     // Hit floor or ceiling
     if (mantis.y + mantis.height >= canvas.height || mantis.y < 0) {
         handleDamage();
-        if (gameState === "GAMEOVER") return;
+        if (gameState === "GAMEOVER" || gameState === "PAUSED") return;
     }
 
     // Scroll Background
@@ -214,7 +236,7 @@ function update() {
 
     if (frame % 100 === 0) createObstacle(); 
     if (frame % 140 === 0) createFood();
-    if (frame % 1400 === 0) createHeart(); // 10% frequency of food
+    if (frame % 1400 === 0) createHeart(); 
 
     let hitObstacle = false; 
 
@@ -235,7 +257,7 @@ function update() {
 
     if (hitObstacle) {
         handleDamage();
-        if (gameState === "GAMEOVER") return;
+        if (gameState === "GAMEOVER" || gameState === "PAUSED") return;
     }
 
     // Food (Flies) Collision
@@ -366,6 +388,26 @@ function drawStartScreen() {
     ctx.fillStyle = "#e0e0e0"; 
     ctx.fillText("Help Bok fly from Oxford to Bangalore!", canvas.width / 2, canvas.height / 2 + 25);
     ctx.fillText("Glide through the gaps in the obstacles.", canvas.width / 2, canvas.height / 2 + 45);
+}
+
+function drawPauseScreen() {
+    draw();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    
+    let msg = collisionMessages[(collisionCount - 1) % collisionMessages.length];
+    
+    ctx.font = "bold 18px 'Segoe UI', sans-serif";
+    ctx.fillText(msg, canvas.width / 2, canvas.height / 2 - 20);
+    
+    ctx.font = "22px 'Segoe UI', sans-serif";
+    ctx.fillText(`Lives Remaining: ${lives}`, canvas.width / 2, canvas.height / 2 + 15);
+    
+    ctx.font = "14px 'Segoe UI', sans-serif";
+    ctx.fillStyle = "#e0e0e0";
+    ctx.fillText("Tap to continue flight...", canvas.width / 2, canvas.height / 2 + 55);
 }
 
 function endGame() {
