@@ -131,7 +131,7 @@ let lives = 2;
 let fliesEaten = 0;
 let collisionCount = 0;
 
-let hasMilestone15 = false;
+let hasMilestone10 = false;
 let hasWon = false;
 let specialTapCount = 0; // Tracks taps for milestone and victory screens
 
@@ -168,7 +168,7 @@ function resetGame() {
     fliesEaten = 0;
     collisionCount = 0;
     specialTapCount = 0;
-    hasMilestone15 = false;
+    hasMilestone10 = false;
     hasWon = false;
     currentBgImg = bgImg; 
     obstacles = [];
@@ -209,7 +209,7 @@ function jump() {
         hearts = [];
         playSound('jump');
         update(); 
-    } else if (gameState === "MILESTONE_15") {
+    } else if (gameState === "MILESTONE_10") {
         specialTapCount++;
         if (specialTapCount >= 3) {
             specialTapCount = 0;
@@ -262,7 +262,7 @@ function handleDamage() {
 }
 
 function update() {
-    if (gameState === "GAMEOVER" || gameState === "PAUSED" || gameState === "MILESTONE_15" || gameState === "VICTORY") return; 
+    if (gameState === "GAMEOVER" || gameState === "PAUSED" || gameState === "MILESTONE_10" || gameState === "VICTORY") return; 
 
     if (gameState === "START") {
         drawStartScreen();
@@ -270,23 +270,23 @@ function update() {
         return;
     }
 
-    // 15 Point Milestone Pause
-    if (mantis.score >= 15 && !hasMilestone15) {
-        hasMilestone15 = true;
-        gameState = "MILESTONE_15";
+    // 10 Point Milestone Pause
+    if (mantis.score >= 10 && !hasMilestone10) {
+        hasMilestone10 = true;
+        gameState = "MILESTONE_10";
         specialTapCount = 0;
         playSound('milestone'); // Play special sound!
         drawMilestoneScreen();
         return; 
     }
 
-    // 45 Point Background Swap
-    if (mantis.score >= 45) {
+    // 20 Point Background Swap
+    if (mantis.score >= 20) {
         currentBgImg = bangloreImg;
     }
 
-    // 50 Point Victory
-    if (mantis.score >= 50 && !hasWon) {
+    // 25 Point Victory
+    if (mantis.score >= 25 && !hasWon) {
         hasWon = true;
         gameState = "VICTORY";
         specialTapCount = 0;
@@ -473,7 +473,7 @@ function drawMilestoneScreen() {
     ctx.textAlign = "center";
     
     ctx.font = "bold 24px 'Segoe UI', sans-serif";
-    ctx.fillText("30% of the journey", canvas.width / 2, canvas.height / 2 - 25);
+    ctx.fillText("40% of the journey", canvas.width / 2, canvas.height / 2 - 25);
     ctx.fillText("is complete!", canvas.width / 2, canvas.height / 2 + 5);
     
     ctx.font = "16px 'Segoe UI', sans-serif";
