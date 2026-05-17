@@ -48,6 +48,54 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const scoreBoard = document.getElementById("scoreBoard");
 
+// --- AUDIO SYNTHESIZER ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playSound(type) {
+    // Browsers require audio context to be resumed after first user interaction
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    if (type === 'jump') {
+        // Quick upward sweep
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+        
+    } else if (type === 'eat') {
+        // High pitched double-beep
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+        oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+        
+    } else if (type === 'crash') {
+        // Low downward crunchy sweep
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    }
+}
+
 // 1. Game State Variables
 let gameState = "START"; 
 let mantis = { x: 50, y: 280, width: 35, height: 35, velocity: 0, energy: 100, score: 0 }; 
@@ -57,7 +105,7 @@ let bgX = 0;
 let obstacles = [];
 let food = [];
 let frame = 0;
-let deathCount = 0; // Tracks how many times the player has died
+let deathCount = 0; 
 
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
@@ -65,7 +113,6 @@ bgImg.src = "BACKGROUND_IMAGE_DATA";
 const mantisImg = new Image();
 mantisImg.src = "MANTIS_IMAGE_DATA";
 
-// Cycle of Game Over messages
 const gameOverMessages = [
     { main: "Bangalore is still far away...", sub: "Tap to try the journey again!" },
     { main: "Bok got grounded!", sub: "Tap to dust off his wings and restart." },
@@ -74,27 +121,33 @@ const gameOverMessages = [
     { main: "Oh no, Bok crashed!", sub: "Bangalore awaits! Tap to restart." }
 ];
 
-// --- SOFT RESTART LOGIC ---
+// --- INSTANT RESTART LOGIC ---
 function resetGame() {
-    mantis = { x: 50, y: 280, width: 35, height: 35, velocity: 0, energy: 100, score: 0 }; 
+    mantis = { x: 50, y: 280, width: 35, height: 35, velocity: jumpForce, energy: 100, score: 0 }; 
     obstacles = [];
     food = [];
     frame = 0;
     bgX = 0;
     scoreBoard.innerHTML = `Energy: 100 | Score: 0`;
-    gameState = "START";
+    gameState = "PLAYING"; 
+    playSound('jump'); // Play jump sound on restart
     update(); 
 }
 
 // 2. Input Handling
 function jump() {
+    // Ensure audio works on first click
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
     if (gameState === "GAMEOVER") {
         resetGame(); 
     } else if (gameState === "START") {
         gameState = "PLAYING"; 
         mantis.velocity = jumpForce;
+        playSound('jump');
     } else {
         mantis.velocity = jumpForce;
+        playSound('jump');
     }
 }
 
@@ -166,6 +219,7 @@ function update() {
             mantis.y < f.y + f.height && mantis.y + mantis.height > f.y) {
             mantis.energy = Math.min(100, mantis.energy + 20); 
             food.splice(index, 1);
+            playSound('eat'); // Play sound when eating a fly!
         }
     });
 
@@ -268,22 +322,21 @@ function drawStartScreen() {
 }
 
 function endGame() {
+    playSound('crash'); // Play crash sound!
     gameState = "GAMEOVER";
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#ffffff";
     
-    // Grab the right message based on death count and loop back around
     let msg = gameOverMessages[deathCount % gameOverMessages.length];
     
-    ctx.font = "bold 20px 'Segoe UI', sans-serif"; // Slightly smaller to fit the long sentences
+    ctx.font = "bold 20px 'Segoe UI', sans-serif"; 
     ctx.textAlign = "center";
     ctx.fillText(msg.main, canvas.width / 2, canvas.height / 2 - 15);
     
     ctx.font = "14px 'Segoe UI', sans-serif";
     ctx.fillText(msg.sub, canvas.width / 2, canvas.height / 2 + 20);
     
-    // Increment the death tracker for the next time
     deathCount++;
 }
 
