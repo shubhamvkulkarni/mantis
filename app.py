@@ -64,7 +64,7 @@ bgImg.src = "BACKGROUND_IMAGE_DATA";
 const mantisImg = new Image();
 mantisImg.src = "MANTIS_IMAGE_DATA";
 
-// --- NEW SOFT RESTART LOGIC ---
+// --- SOFT RESTART LOGIC ---
 function resetGame() {
     mantis = { x: 50, y: 280, width: 35, height: 35, velocity: 0, energy: 100, score: 0 }; 
     obstacles = [];
@@ -136,7 +136,7 @@ function update() {
     obstacles.forEach((obs, index) => {
         obs.x -= 2.5; 
         
-        // Slightly forgiving Hitbox Padding (4 pixels) so you don't die instantly if touching the very edge
+        // Hitbox Padding
         let pad = 4;
         if (mantis.x + pad < obs.x + obs.w && mantis.x + mantis.width - pad > obs.x &&
             mantis.y + pad < obs.y + obs.h && mantis.y + mantis.height - pad > obs.y) {
@@ -249,10 +249,19 @@ function drawStartScreen() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
+    
+    // Title
     ctx.font = "bold 32px 'Segoe UI', sans-serif";
     ctx.fillText("APEX GLIDER", canvas.width / 2, canvas.height / 2 - 40);
-    ctx.font = "16px 'Segoe UI', sans-serif";
-    ctx.fillText("Tap to fly!", canvas.width / 2, canvas.height / 2 + 10);
+    
+    // Primary instruction
+    ctx.font = "18px 'Segoe UI', sans-serif";
+    ctx.fillText("Tap to fly!", canvas.width / 2, canvas.height / 2 + 5);
+    
+    // New secondary instruction
+    ctx.font = "14px 'Segoe UI', sans-serif";
+    ctx.fillStyle = "#e0e0e0"; // Slightly softer white/gray so it looks like a subtitle
+    ctx.fillText("Avoid top and bottom obstacles!", canvas.width / 2, canvas.height / 2 + 35);
 }
 
 function endGame() {
