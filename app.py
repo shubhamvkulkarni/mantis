@@ -4,7 +4,8 @@ import base64
 import os
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Apex Glider", layout="centered", page_icon="🦗")
+# Using the local image file for the browser tab favicon
+st.set_page_config(page_title="Apex Glider", layout="centered", page_icon="assets/mantis.png")
 
 # --- REMOVE STREAMLIT DEFAULT PADDING ---
 st.markdown("""
@@ -213,7 +214,6 @@ function jump() {
             specialTapCount = 0;
             gameState = "PLAYING";
             
-            // --- SAFETY CLEAR: Gives the player a clean screen to resume ---
             mantis.y = 280;
             mantis.velocity = jumpForce;
             obstacles = [];
@@ -560,8 +560,8 @@ game_html = game_html.replace("BANGLORE_IMAGE_DATA", banglore_img_data)
 components.html(game_html, height=580)
 
 # --- STORYLINE ---
-st.markdown("""
-### 🦗 The Epic of Bok
+st.markdown(f"""
+### <img src="{mantis_img_data}" width="35" style="vertical-align: middle; border-radius: 4px; margin-right: 8px;"> The story of Bok
 
 To Bok, the glass walls of his terrarium in Oxford were the edges of the universe, and his human, V, was the center of it. Every day, V would bring him flies and let him perch comfortably on their shoulder. They were an inseparable team.
 
@@ -572,4 +572,4 @@ The apartment grew painfully quiet. For a tiny pet mantis, a few days without th
 Spreading his fragile green wings, Bok looked out at the massive, terrifying world and took a leap of faith. 
 
 Now, he is on the flight of a lifetime. He must navigate treacherous skies, dodge obstacles, and survive on whatever flies he can catch mid-air. **Help this brave little mantis cross the world and pull off the ultimate reunion in Namma Bengaluru!**
-""")
+""", unsafe_allow_html=True)
