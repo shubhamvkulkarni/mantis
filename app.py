@@ -58,17 +58,28 @@ let obstacles = [];
 let food = [];
 let frame = 0;
 
-// Load Images
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
 
 const mantisImg = new Image();
 mantisImg.src = "MANTIS_IMAGE_DATA";
 
+// --- NEW SOFT RESTART LOGIC ---
+function resetGame() {
+    mantis = { x: 50, y: 280, width: 35, height: 35, velocity: 0, energy: 100, score: 0 }; 
+    obstacles = [];
+    food = [];
+    frame = 0;
+    bgX = 0;
+    scoreBoard.innerHTML = `Energy: 100 | Score: 0`;
+    gameState = "START";
+    update(); // Restart the game loop
+}
+
 // 2. Input Handling
 function jump() {
     if (gameState === "GAMEOVER") {
-        location.reload(); 
+        resetGame(); // Soft reset to the Start Screen
     } else if (gameState === "START") {
         gameState = "PLAYING"; 
         mantis.velocity = jumpForce;
@@ -95,7 +106,7 @@ function createFood() {
 }
 
 function update() {
-    if (gameState === "GAMEOVER") return;
+    if (gameState === "GAMEOVER") return; // Stops the loop completely
 
     if (gameState === "START") {
         drawStartScreen();
@@ -108,7 +119,7 @@ function update() {
     mantis.y += mantis.velocity;
     mantis.energy -= 0.08; 
 
-    // Hit boundaries
+    // Hit floor, ceiling, or out of energy
     if (mantis.y + mantis.height >= canvas.height || mantis.y < 0 || mantis.energy <= 0) {
         return endGame();
     }
@@ -120,17 +131,26 @@ function update() {
     if (frame % 100 === 0) createObstacle(); 
     if (frame % 140 === 0) createFood();
 
+    let hitObstacle = false; // Track if an obstacle is hit this frame
+
     obstacles.forEach((obs, index) => {
         obs.x -= 2.5; 
-        if (mantis.x < obs.x + obs.w && mantis.x + mantis.width > obs.x &&
-            mantis.y < obs.y + obs.h && mantis.y + mantis.height > obs.y) {
-            endGame();
+        
+        // Slightly forgiving Hitbox Padding (4 pixels) so you don't die instantly if touching the very edge
+        let pad = 4;
+        if (mantis.x + pad < obs.x + obs.w && mantis.x + mantis.width - pad > obs.x &&
+            mantis.y + pad < obs.y + obs.h && mantis.y + mantis.height - pad > obs.y) {
+            hitObstacle = true;
         }
+        
         if (obs.x + obs.w < 0) {
             obstacles.splice(index, 1);
             mantis.score += 0.5; 
         }
     });
+
+    // If we hit an obstacle, instantly end the game BEFORE the draw() function can overwrite it
+    if (hitObstacle) return endGame();
 
     food.forEach((f, index) => {
         f.x -= 3; 
@@ -149,7 +169,6 @@ function update() {
 
 // 4. Render 
 function draw() {
-    // Background Image
     if (bgImg.src && bgImg.src.startsWith("data:image")) {
         ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
         ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
@@ -158,59 +177,43 @@ function draw() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // --- PROCEDURAL OBSTACLES ---
     obstacles.forEach(obs => {
         if (obs.y === 0) {
-            // TOP OBSTACLE: Hanging Branch
-            
-            // 1. Draw Wood Trunk
-            ctx.fillStyle = "#5d4037"; // Brown
+            // TOP OBSTACLE
+            ctx.fillStyle = "#5d4037"; 
             ctx.fillRect(obs.x + 10, obs.y, obs.w - 20, obs.h - 20);
             
-            // 2. Draw Leaf Clusters
-            ctx.fillStyle = "#2e7d32"; // Dark Green
+            ctx.fillStyle = "#2e7d32"; 
             ctx.beginPath();
-            // Center cluster
             ctx.arc(obs.x + obs.w/2, obs.y + obs.h - 20, 22, 0, Math.PI * 2); 
-            // Left cluster
             ctx.arc(obs.x + 5, obs.y + obs.h - 35, 16, 0, Math.PI * 2);       
-            // Right cluster
             ctx.arc(obs.x + obs.w - 5, obs.y + obs.h - 35, 16, 0, Math.PI * 2); 
             ctx.fill();
 
-            // Light Green Highlights on leaves
             ctx.fillStyle = "#4caf50"; 
             ctx.beginPath();
             ctx.arc(obs.x + obs.w/2 - 6, obs.y + obs.h - 24, 10, 0, Math.PI * 2); 
             ctx.fill();
-
         } else {
-            // BOTTOM OBSTACLE: Tall Grass
-            
-            // 1. Solid base
-            ctx.fillStyle = "#1b5e20"; // Very dark green base
+            // BOTTOM OBSTACLE
+            ctx.fillStyle = "#1b5e20"; 
             ctx.fillRect(obs.x, obs.y + 18, obs.w, obs.h - 18);
             
-            // 2. Spiky Grass Blades reaching up
-            ctx.fillStyle = "#4caf50"; // Brighter green blades
+            ctx.fillStyle = "#4caf50"; 
             ctx.beginPath();
-            ctx.moveTo(obs.x, obs.y + 20); // Start slightly lower than the bounding box
+            ctx.moveTo(obs.x, obs.y + 20); 
             
             let blades = 3; 
             let bladeWidth = obs.w / blades;
-            
             for (let i = 0; i < blades; i++) {
-                // Tip of the blade (alternating height slightly for organic look)
                 let peakOffset = i % 2 === 0 ? 0 : 6;
                 ctx.lineTo(obs.x + (i * bladeWidth) + (bladeWidth * 0.4), obs.y + peakOffset); 
-                // Base of the blade
                 ctx.lineTo(obs.x + ((i + 1) * bladeWidth), obs.y + 20);
             }
             ctx.fill();
         }
     });
 
-    // Food (Fly Emoji)
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -218,7 +221,6 @@ function draw() {
         ctx.fillText("🪰", f.x + f.width/2, f.y + f.height/2);
     });
 
-    // Mantis Rendering
     ctx.save();
     ctx.translate(mantis.x + mantis.width / 2, mantis.y + mantis.height / 2);
     
