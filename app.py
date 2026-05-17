@@ -90,6 +90,29 @@ function playSound(type) {
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + 0.3);
+        
+    } else if (type === 'milestone') {
+        // Uplifting 3-note chime
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+        oscillator.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1); // C#5
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); // E5
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+        
+    } else if (type === 'victory') {
+        // Triumphant 4-note fanfare
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+        oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.3); // G5
+        oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.45); // C6
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.8);
     }
 }
 
@@ -110,6 +133,7 @@ let collisionCount = 0;
 
 let hasMilestone15 = false;
 let hasWon = false;
+let specialTapCount = 0; // Tracks taps for milestone and victory screens
 
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
@@ -143,6 +167,7 @@ function resetGame() {
     lives = 2;
     fliesEaten = 0;
     collisionCount = 0;
+    specialTapCount = 0;
     hasMilestone15 = false;
     hasWon = false;
     currentBgImg = bgImg; 
@@ -161,8 +186,16 @@ function resetGame() {
 function jump() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
-    if (gameState === "GAMEOVER" || gameState === "VICTORY") {
+    if (gameState === "GAMEOVER") {
         resetGame(); 
+    } else if (gameState === "VICTORY") {
+        specialTapCount++;
+        if (specialTapCount >= 3) {
+            specialTapCount = 0;
+            resetGame();
+        } else {
+            drawVictoryScreen(); // Re-render to show updated tap count
+        }
     } else if (gameState === "START") {
         gameState = "PLAYING"; 
         mantis.velocity = jumpForce;
@@ -177,9 +210,15 @@ function jump() {
         playSound('jump');
         update(); 
     } else if (gameState === "MILESTONE_15") {
-        gameState = "PLAYING";
-        playSound('jump');
-        update();
+        specialTapCount++;
+        if (specialTapCount >= 3) {
+            specialTapCount = 0;
+            gameState = "PLAYING";
+            playSound('jump');
+            update();
+        } else {
+            drawMilestoneScreen(); // Re-render to show updated tap count
+        }
     } else {
         mantis.velocity = jumpForce;
         playSound('jump');
@@ -211,7 +250,6 @@ function handleDamage() {
     playSound('crash');
     lives--;
     
-    // Immediately update UI to show correct lives before freezing the screen
     scoreBoard.innerHTML = `Score: ${Math.floor(mantis.score)} | ❤️: ${lives}`;
 
     if (lives <= 0) {
@@ -233,22 +271,26 @@ function update() {
     }
 
     // 15 Point Milestone Pause
-    if (mantis.score >= 10 && !hasMilestone15) {
+    if (mantis.score >= 15 && !hasMilestone15) {
         hasMilestone15 = true;
         gameState = "MILESTONE_15";
+        specialTapCount = 0;
+        playSound('milestone'); // Play special sound!
         drawMilestoneScreen();
         return; 
     }
 
     // 45 Point Background Swap
-    if (mantis.score >= 11) {
+    if (mantis.score >= 45) {
         currentBgImg = bangloreImg;
     }
 
     // 50 Point Victory
-    if (mantis.score >= 12 && !hasWon) {
+    if (mantis.score >= 50 && !hasWon) {
         hasWon = true;
         gameState = "VICTORY";
+        specialTapCount = 0;
+        playSound('victory'); // Play fanfare sound!
         drawVictoryScreen();
         return;
     }
@@ -427,7 +469,7 @@ function drawMilestoneScreen() {
     draw();
     ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#4caf50"; // Nice green color
+    ctx.fillStyle = "#4caf50"; 
     ctx.textAlign = "center";
     
     ctx.font = "bold 24px 'Segoe UI', sans-serif";
@@ -436,7 +478,7 @@ function drawMilestoneScreen() {
     
     ctx.font = "16px 'Segoe UI', sans-serif";
     ctx.fillStyle = "#ffffff";
-    ctx.fillText("Tap to continue the journey.", canvas.width / 2, canvas.height / 2 + 50);
+    ctx.fillText(`Triple tap to continue! (${specialTapCount}/3)`, canvas.width / 2, canvas.height / 2 + 50);
 }
 
 function drawPauseScreen() {
@@ -471,7 +513,6 @@ function drawVictoryScreen() {
     
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px 'Segoe UI', sans-serif";
-    // Splitting across two lines so it doesn't run off the screen
     ctx.fillText("Bok has successfully completed", canvas.width / 2, canvas.height / 2 - 5);
     ctx.fillText("his epic quest to VJ!", canvas.width / 2, canvas.height / 2 + 20);
     
@@ -480,8 +521,8 @@ function drawVictoryScreen() {
     ctx.fillText("Victory!", canvas.width / 2, canvas.height / 2 + 70);
     
     ctx.fillStyle = "#a0a0a0";
-    ctx.font = "13px 'Segoe UI', sans-serif";
-    ctx.fillText("Tap to play again.", canvas.width / 2, canvas.height / 2 + 120);
+    ctx.font = "14px 'Segoe UI', sans-serif";
+    ctx.fillText(`Triple tap to play again! (${specialTapCount}/3)`, canvas.width / 2, canvas.height / 2 + 120);
 }
 
 function endGame() {
