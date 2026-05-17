@@ -163,6 +163,7 @@ function jump() {
         food = [];
         hearts = [];
         playSound('jump');
+        update(); // Force the animation loop to start running again
     } else {
         mantis.velocity = jumpForce;
         playSound('jump');
@@ -202,20 +203,15 @@ function handleDamage() {
     } else {
         gameState = "PAUSED";
         collisionCount++;
+        drawPauseScreen(); // Render the pause screen visually
     }
 }
 
 function update() {
-    if (gameState === "GAMEOVER") return; 
+    if (gameState === "GAMEOVER" || gameState === "PAUSED") return; // Stop loop if game is over or paused
 
     if (gameState === "START") {
         drawStartScreen();
-        requestAnimationFrame(update);
-        return;
-    }
-
-    if (gameState === "PAUSED") {
-        drawPauseScreen();
         requestAnimationFrame(update);
         return;
     }
@@ -227,7 +223,7 @@ function update() {
     // Hit floor or ceiling
     if (mantis.y + mantis.height >= canvas.height || mantis.y < 0) {
         handleDamage();
-        if (gameState === "GAMEOVER" || gameState === "PAUSED") return;
+        return; // Break out of update loop
     }
 
     // Scroll Background
@@ -257,7 +253,7 @@ function update() {
 
     if (hitObstacle) {
         handleDamage();
-        if (gameState === "GAMEOVER" || gameState === "PAUSED") return;
+        return; // Break out of update loop
     }
 
     // Food (Flies) Collision
