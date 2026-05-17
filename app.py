@@ -233,7 +233,7 @@ function update() {
     }
 
     // 15 Point Milestone Pause
-    if (mantis.score >= 15 && !hasMilestone15) {
+    if (mantis.score >= 10 && !hasMilestone15) {
         hasMilestone15 = true;
         gameState = "MILESTONE_15";
         drawMilestoneScreen();
@@ -241,12 +241,12 @@ function update() {
     }
 
     // 45 Point Background Swap
-    if (mantis.score >= 45) {
+    if (mantis.score >= 11) {
         currentBgImg = bangloreImg;
     }
 
     // 50 Point Victory
-    if (mantis.score >= 50 && !hasWon) {
+    if (mantis.score >= 12 && !hasWon) {
         hasWon = true;
         gameState = "VICTORY";
         drawVictoryScreen();
