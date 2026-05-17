@@ -39,7 +39,7 @@ game_html = """
     <canvas id="gameCanvas" width="320" height="560" style="border:3px solid #1b5e20; border-radius: 8px; display: block; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);"></canvas>
     
     <div id="scoreBoard" style="position: absolute; bottom: 10px; left: 0; width: 100%; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;">
-        Energy: 100 | Score: 0
+        Score: 0 | ❤️: 2
     </div>
 </div>
 
@@ -53,7 +53,6 @@ const AudioContext = window.AudioContext || window.webkitAudioContext;
 const audioCtx = new AudioContext();
 
 function playSound(type) {
-    // Browsers require audio context to be resumed after first user interaction
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
@@ -65,7 +64,6 @@ function playSound(type) {
     gainNode.connect(audioCtx.destination);
     
     if (type === 'jump') {
-        // Quick upward sweep
         oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
@@ -75,7 +73,6 @@ function playSound(type) {
         oscillator.stop(audioCtx.currentTime + 0.1);
         
     } else if (type === 'eat') {
-        // High pitched double-beep
         oscillator.type = 'square';
         oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
         oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.05);
@@ -85,7 +82,6 @@ function playSound(type) {
         oscillator.stop(audioCtx.currentTime + 0.1);
         
     } else if (type === 'crash') {
-        // Low downward crunchy sweep
         oscillator.type = 'sawtooth';
         oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
@@ -98,14 +94,17 @@ function playSound(type) {
 
 // 1. Game State Variables
 let gameState = "START"; 
-let mantis = { x: 50, y: 280, width: 35, height: 35, velocity: 0, energy: 100, score: 0 }; 
+let mantis = { x: 50, y: 280, width: 35, height: 35, velocity: 0, score: 0 }; 
 let gravity = 0.4;
 let jumpForce = -7;
 let bgX = 0; 
 let obstacles = [];
 let food = [];
+let hearts = [];
 let frame = 0;
 let deathCount = 0; 
+let lives = 2;
+let fliesEaten = 0;
 
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
@@ -123,20 +122,22 @@ const gameOverMessages = [
 
 // --- INSTANT RESTART LOGIC ---
 function resetGame() {
-    mantis = { x: 50, y: 280, width: 35, height: 35, velocity: jumpForce, energy: 100, score: 0 }; 
+    mantis = { x: 50, y: 280, width: 35, height: 35, velocity: jumpForce, score: 0 }; 
+    lives = 2;
+    fliesEaten = 0;
     obstacles = [];
     food = [];
+    hearts = [];
     frame = 0;
     bgX = 0;
-    scoreBoard.innerHTML = `Energy: 100 | Score: 0`;
+    scoreBoard.innerHTML = `Score: 0 | ❤️: 2`;
     gameState = "PLAYING"; 
-    playSound('jump'); // Play jump sound on restart
+    playSound('jump'); 
     update(); 
 }
 
 // 2. Input Handling
 function jump() {
-    // Ensure audio works on first click
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
     if (gameState === "GAMEOVER") {
@@ -168,6 +169,26 @@ function createFood() {
     food.push({ x: canvas.width, y: Math.random() * (canvas.height - 80) + 40, width: 25, height: 25 });
 }
 
+function createHeart() {
+    hearts.push({ x: canvas.width, y: Math.random() * (canvas.height - 80) + 40, width: 25, height: 25 });
+}
+
+function handleDamage() {
+    playSound('crash');
+    lives--;
+    
+    if (lives <= 0) {
+        endGame();
+    } else {
+        // Soft reset board to continue playing
+        mantis.y = 280;
+        mantis.velocity = jumpForce;
+        obstacles = [];
+        food = [];
+        hearts = [];
+    }
+}
+
 function update() {
     if (gameState === "GAMEOVER") return; 
 
@@ -180,11 +201,11 @@ function update() {
     // Physics
     mantis.velocity += gravity;
     mantis.y += mantis.velocity;
-    mantis.energy -= 0.08; 
 
-    // Hit floor, ceiling, or out of energy
-    if (mantis.y + mantis.height >= canvas.height || mantis.y < 0 || mantis.energy <= 0) {
-        return endGame();
+    // Hit floor or ceiling
+    if (mantis.y + mantis.height >= canvas.height || mantis.y < 0) {
+        handleDamage();
+        if (gameState === "GAMEOVER") return;
     }
 
     // Scroll Background
@@ -193,6 +214,7 @@ function update() {
 
     if (frame % 100 === 0) createObstacle(); 
     if (frame % 140 === 0) createFood();
+    if (frame % 1400 === 0) createHeart(); // 10% frequency of food
 
     let hitObstacle = false; 
 
@@ -211,21 +233,42 @@ function update() {
         }
     });
 
-    if (hitObstacle) return endGame();
+    if (hitObstacle) {
+        handleDamage();
+        if (gameState === "GAMEOVER") return;
+    }
 
+    // Food (Flies) Collision
     food.forEach((f, index) => {
         f.x -= 3; 
         if (mantis.x < f.x + f.width && mantis.x + mantis.width > f.x &&
             mantis.y < f.y + f.height && mantis.y + mantis.height > f.y) {
-            mantis.energy = Math.min(100, mantis.energy + 20); 
+            
+            fliesEaten++;
+            if (fliesEaten >= 5) {
+                lives++;
+                fliesEaten = 0;
+            }
             food.splice(index, 1);
-            playSound('eat'); // Play sound when eating a fly!
+            playSound('eat'); 
+        }
+    });
+
+    // Heart Collision
+    hearts.forEach((h, index) => {
+        h.x -= 3;
+        if (mantis.x < h.x + h.width && mantis.x + mantis.width > h.x &&
+            mantis.y < h.y + h.height && mantis.y + mantis.height > h.y) {
+            
+            lives++;
+            hearts.splice(index, 1);
+            playSound('eat'); 
         }
     });
 
     frame++;
     draw();
-    scoreBoard.innerHTML = `Energy: ${Math.max(0, Math.floor(mantis.energy))} | Score: ${Math.floor(mantis.score)}`;
+    scoreBoard.innerHTML = `Score: ${Math.floor(mantis.score)} | ❤️: ${lives}`;
     requestAnimationFrame(update);
 }
 
@@ -277,17 +320,21 @@ function draw() {
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    
+    // Draw Flies
     food.forEach(f => {
         ctx.fillText("🪰", f.x + f.width/2, f.y + f.height/2);
+    });
+
+    // Draw Hearts
+    hearts.forEach(h => {
+        ctx.fillText("❤️", h.x + h.width/2, h.y + h.height/2);
     });
 
     ctx.save();
     ctx.translate(mantis.x + mantis.width / 2, mantis.y + mantis.height / 2);
     
     let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (mantis.velocity * 0.1)));
-    
-    // ctx.scale(-1, 1); 
-    
     ctx.rotate(rotation); 
     
     if (mantisImg.src && mantisImg.src.startsWith("data:image")) {
@@ -322,7 +369,6 @@ function drawStartScreen() {
 }
 
 function endGame() {
-    playSound('crash'); // Play crash sound!
     gameState = "GAMEOVER";
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
