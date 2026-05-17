@@ -57,12 +57,22 @@ let bgX = 0;
 let obstacles = [];
 let food = [];
 let frame = 0;
+let deathCount = 0; // Tracks how many times the player has died
 
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
 
 const mantisImg = new Image();
 mantisImg.src = "MANTIS_IMAGE_DATA";
+
+// Cycle of Game Over messages
+const gameOverMessages = [
+    { main: "Bangalore is still far away...", sub: "Tap to try the journey again!" },
+    { main: "Bok got grounded!", sub: "Tap to dust off his wings and restart." },
+    { main: "Ouch! Missed the gap.", sub: "Tap to take off and try again!" },
+    { main: "Flight Interrupted!", sub: "Tap to resume the trip to Bangalore." },
+    { main: "Oh no, Bok crashed!", sub: "Bangalore awaits! Tap to restart." }
+];
 
 // --- SOFT RESTART LOGIC ---
 function resetGame() {
@@ -73,13 +83,13 @@ function resetGame() {
     bgX = 0;
     scoreBoard.innerHTML = `Energy: 100 | Score: 0`;
     gameState = "START";
-    update(); // Restart the game loop
+    update(); 
 }
 
 // 2. Input Handling
 function jump() {
     if (gameState === "GAMEOVER") {
-        resetGame(); // Soft reset to the Start Screen
+        resetGame(); 
     } else if (gameState === "START") {
         gameState = "PLAYING"; 
         mantis.velocity = jumpForce;
@@ -106,7 +116,7 @@ function createFood() {
 }
 
 function update() {
-    if (gameState === "GAMEOVER") return; // Stops the loop completely
+    if (gameState === "GAMEOVER") return; 
 
     if (gameState === "START") {
         drawStartScreen();
@@ -131,12 +141,11 @@ function update() {
     if (frame % 100 === 0) createObstacle(); 
     if (frame % 140 === 0) createFood();
 
-    let hitObstacle = false; // Track if an obstacle is hit this frame
+    let hitObstacle = false; 
 
     obstacles.forEach((obs, index) => {
         obs.x -= 2.5; 
         
-        // Hitbox Padding
         let pad = 4;
         if (mantis.x + pad < obs.x + obs.w && mantis.x + mantis.width - pad > obs.x &&
             mantis.y + pad < obs.y + obs.h && mantis.y + mantis.height - pad > obs.y) {
@@ -149,7 +158,6 @@ function update() {
         }
     });
 
-    // If we hit an obstacle, instantly end the game BEFORE the draw() function can overwrite it
     if (hitObstacle) return endGame();
 
     food.forEach((f, index) => {
@@ -179,7 +187,6 @@ function draw() {
 
     obstacles.forEach(obs => {
         if (obs.y === 0) {
-            // TOP OBSTACLE
             ctx.fillStyle = "#5d4037"; 
             ctx.fillRect(obs.x + 10, obs.y, obs.w - 20, obs.h - 20);
             
@@ -195,7 +202,6 @@ function draw() {
             ctx.arc(obs.x + obs.w/2 - 6, obs.y + obs.h - 24, 10, 0, Math.PI * 2); 
             ctx.fill();
         } else {
-            // BOTTOM OBSTACLE
             ctx.fillStyle = "#1b5e20"; 
             ctx.fillRect(obs.x, obs.y + 18, obs.w, obs.h - 18);
             
@@ -226,7 +232,6 @@ function draw() {
     
     let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (mantis.velocity * 0.1)));
     
-    // Uncomment next line if your mantis.png naturally faces LEFT
     // ctx.scale(-1, 1); 
     
     ctx.rotate(rotation); 
@@ -250,18 +255,16 @@ function drawStartScreen() {
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     
-    // Title
     ctx.font = "bold 32px 'Segoe UI', sans-serif";
-    ctx.fillText("APEX GLIDER", canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillText("APEX GLIDER", canvas.width / 2, canvas.height / 2 - 50);
     
-    // Primary instruction
     ctx.font = "18px 'Segoe UI', sans-serif";
-    ctx.fillText("Tap to fly!", canvas.width / 2, canvas.height / 2 + 5);
+    ctx.fillText("Tap to fly!", canvas.width / 2, canvas.height / 2 - 10);
     
-    // New secondary instruction
-    ctx.font = "14px 'Segoe UI', sans-serif";
-    ctx.fillStyle = "#e0e0e0"; // Slightly softer white/gray so it looks like a subtitle
-    ctx.fillText("Avoid top and bottom obstacles!", canvas.width / 2, canvas.height / 2 + 35);
+    ctx.font = "13px 'Segoe UI', sans-serif";
+    ctx.fillStyle = "#e0e0e0"; 
+    ctx.fillText("Help Bok fly from Oxford to Bangalore!", canvas.width / 2, canvas.height / 2 + 25);
+    ctx.fillText("Glide through the gaps in the obstacles.", canvas.width / 2, canvas.height / 2 + 45);
 }
 
 function endGame() {
@@ -269,11 +272,19 @@ function endGame() {
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 32px 'Segoe UI', sans-serif";
+    
+    // Grab the right message based on death count and loop back around
+    let msg = gameOverMessages[deathCount % gameOverMessages.length];
+    
+    ctx.font = "bold 20px 'Segoe UI', sans-serif"; // Slightly smaller to fit the long sentences
     ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
-    ctx.font = "16px 'Segoe UI', sans-serif";
-    ctx.fillText("Tap to Restart", canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText(msg.main, canvas.width / 2, canvas.height / 2 - 15);
+    
+    ctx.font = "14px 'Segoe UI', sans-serif";
+    ctx.fillText(msg.sub, canvas.width / 2, canvas.height / 2 + 20);
+    
+    // Increment the death tracker for the next time
+    deathCount++;
 }
 
 setTimeout(update, 100);
