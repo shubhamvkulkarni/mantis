@@ -20,22 +20,24 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- IMAGE LOADER FOR BACKGROUND ---
+# --- IMAGE LOADER ---
 def get_base64_image(file_path):
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode()
-            return f"data:image/jpeg;base64,{encoded}" 
+            ext = file_path.split('.')[-1].lower()
+            mime_type = "image/png" if ext == "png" else "image/jpeg"
+            return f"data:{mime_type};base64,{encoded}" 
     return "" 
 
 bg_img_data = get_base64_image("assets/background.jpg")
+mantis_img_data = get_base64_image("assets/mantis.png")
 
 # --- GAME HTML & JAVASCRIPT ---
 game_html = """
 <div id="game-container" style="text-align: center; user-select: none; touch-action: none; position: relative; width: 320px; margin: 0 auto;">
     <canvas id="gameCanvas" width="320" height="560" style="border:3px solid #1b5e20; border-radius: 8px; display: block; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);"></canvas>
     
-    <!-- Scoreboard -->
     <div id="scoreBoard" style="position: absolute; bottom: 10px; left: 0; width: 100%; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;">
         Energy: 100 | Score: 0
     </div>
@@ -56,9 +58,12 @@ let obstacles = [];
 let food = [];
 let frame = 0;
 
-// Load Background Image
+// Load Images
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
+
+const mantisImg = new Image();
+mantisImg.src = "MANTIS_IMAGE_DATA";
 
 // 2. Input Handling
 function jump() {
@@ -103,7 +108,7 @@ function update() {
     mantis.y += mantis.velocity;
     mantis.energy -= 0.08; 
 
-    // Hit boundaries or out of energy
+    // Hit boundaries
     if (mantis.y + mantis.height >= canvas.height || mantis.y < 0 || mantis.energy <= 0) {
         return endGame();
     }
@@ -153,13 +158,56 @@ function draw() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Obstacles
-    ctx.fillStyle = "#2e7d32";
+    // --- PROCEDURAL OBSTACLES ---
     obstacles.forEach(obs => {
-        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-        ctx.fillStyle = "#4caf50";
-        ctx.fillRect(obs.x, obs.y, 8, obs.h);
-        ctx.fillStyle = "#2e7d32"; 
+        if (obs.y === 0) {
+            // TOP OBSTACLE: Hanging Branch
+            
+            // 1. Draw Wood Trunk
+            ctx.fillStyle = "#5d4037"; // Brown
+            ctx.fillRect(obs.x + 10, obs.y, obs.w - 20, obs.h - 20);
+            
+            // 2. Draw Leaf Clusters
+            ctx.fillStyle = "#2e7d32"; // Dark Green
+            ctx.beginPath();
+            // Center cluster
+            ctx.arc(obs.x + obs.w/2, obs.y + obs.h - 20, 22, 0, Math.PI * 2); 
+            // Left cluster
+            ctx.arc(obs.x + 5, obs.y + obs.h - 35, 16, 0, Math.PI * 2);       
+            // Right cluster
+            ctx.arc(obs.x + obs.w - 5, obs.y + obs.h - 35, 16, 0, Math.PI * 2); 
+            ctx.fill();
+
+            // Light Green Highlights on leaves
+            ctx.fillStyle = "#4caf50"; 
+            ctx.beginPath();
+            ctx.arc(obs.x + obs.w/2 - 6, obs.y + obs.h - 24, 10, 0, Math.PI * 2); 
+            ctx.fill();
+
+        } else {
+            // BOTTOM OBSTACLE: Tall Grass
+            
+            // 1. Solid base
+            ctx.fillStyle = "#1b5e20"; // Very dark green base
+            ctx.fillRect(obs.x, obs.y + 18, obs.w, obs.h - 18);
+            
+            // 2. Spiky Grass Blades reaching up
+            ctx.fillStyle = "#4caf50"; // Brighter green blades
+            ctx.beginPath();
+            ctx.moveTo(obs.x, obs.y + 20); // Start slightly lower than the bounding box
+            
+            let blades = 3; 
+            let bladeWidth = obs.w / blades;
+            
+            for (let i = 0; i < blades; i++) {
+                // Tip of the blade (alternating height slightly for organic look)
+                let peakOffset = i % 2 === 0 ? 0 : 6;
+                ctx.lineTo(obs.x + (i * bladeWidth) + (bladeWidth * 0.4), obs.y + peakOffset); 
+                // Base of the blade
+                ctx.lineTo(obs.x + ((i + 1) * bladeWidth), obs.y + 20);
+            }
+            ctx.fill();
+        }
     });
 
     // Food (Fly Emoji)
@@ -170,20 +218,25 @@ function draw() {
         ctx.fillText("🪰", f.x + f.width/2, f.y + f.height/2);
     });
 
-    // Mantis Emoji (Flipped horizontally)
+    // Mantis Rendering
     ctx.save();
     ctx.translate(mantis.x + mantis.width / 2, mantis.y + mantis.height / 2);
     
     let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (mantis.velocity * 0.1)));
     
-    // Scale by -1 to flip right, invert rotation to match
-    ctx.scale(-1, 1); 
-    ctx.rotate(-rotation); 
+    // Uncomment next line if your mantis.png naturally faces LEFT
+    // ctx.scale(-1, 1); 
     
-    ctx.font = "35px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("🦗", 0, 0); 
+    ctx.rotate(rotation); 
+    
+    if (mantisImg.src && mantisImg.src.startsWith("data:image")) {
+        ctx.drawImage(mantisImg, -mantis.width / 2, -mantis.height / 2, mantis.width, mantis.height);
+    } else {
+        ctx.font = "35px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🦗", 0, 0); 
+    }
     
     ctx.restore();
 }
@@ -195,7 +248,7 @@ function drawStartScreen() {
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.font = "bold 32px 'Segoe UI', sans-serif";
-    ctx.fillText("APEX GLIDER 🦗", canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillText("APEX GLIDER", canvas.width / 2, canvas.height / 2 - 40);
     ctx.font = "16px 'Segoe UI', sans-serif";
     ctx.fillText("Tap to fly!", canvas.width / 2, canvas.height / 2 + 10);
 }
@@ -217,4 +270,6 @@ setTimeout(update, 100);
 """
 
 game_html = game_html.replace("BACKGROUND_IMAGE_DATA", bg_img_data)
+game_html = game_html.replace("MANTIS_IMAGE_DATA", mantis_img_data)
+
 components.html(game_html, height=580)
