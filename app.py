@@ -11,7 +11,7 @@ st.markdown("""
     <style>
         .block-container {
             padding-top: 1rem !important; 
-            padding-bottom: 0rem !important;
+            padding-bottom: 2rem !important;
             margin-top: 0rem !important;
         }
         header {
@@ -520,7 +520,7 @@ function drawVictoryScreen() {
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px 'Segoe UI', sans-serif";
     ctx.fillText("Bok has successfully completed", canvas.width / 2, canvas.height / 2 - 5);
-    ctx.fillText("his epic quest to VJ!", canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText("his epic quest to V!", canvas.width / 2, canvas.height / 2 + 20);
     
     ctx.fillStyle = "#FFD700"; 
     ctx.font = "bold 28px 'Segoe UI', sans-serif";
@@ -558,3 +558,18 @@ game_html = game_html.replace("MANTIS_IMAGE_DATA", mantis_img_data)
 game_html = game_html.replace("BANGLORE_IMAGE_DATA", banglore_img_data)
 
 components.html(game_html, height=580)
+
+# --- STORYLINE ---
+st.markdown("""
+### 🦗 The Epic of Bok
+
+To Bok, the glass walls of his terrarium in Oxford were the edges of the universe, and his human, V, was the center of it. Every day, V would bring him flies and let him perch comfortably on their shoulder. They were an inseparable team.
+
+But one morning, the routine broke. V packed a suitcase, gently tapped the glass, and whispered, *"I'll be back from Bangalore in a few days."* Then, the front door clicked shut. 
+
+The apartment grew painfully quiet. For a tiny pet mantis, a few days without their parent feels like an absolute eternity. Bok simply couldn't wait. Spotting the living room window left open just a crack, he felt the undeniable pull of a 5,000-mile journey. He didn't know exactly what a 'Bangalore' was, but he knew his human was there. 
+
+Spreading his fragile green wings, Bok looked out at the massive, terrifying world and took a leap of faith. 
+
+Now, he is on the flight of a lifetime. He must navigate treacherous skies, dodge obstacles, and survive on whatever flies he can catch mid-air. **Help this brave little mantis cross the world and pull off the ultimate reunion in Namma Bengaluru!**
+""")
