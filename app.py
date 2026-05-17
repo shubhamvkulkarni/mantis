@@ -32,6 +32,7 @@ def get_base64_image(file_path):
 
 bg_img_data = get_base64_image("assets/background.jpg")
 mantis_img_data = get_base64_image("assets/mantis.png")
+banglore_img_data = get_base64_image("assets/banglore.jpg")
 
 # --- GAME HTML & JAVASCRIPT ---
 game_html = """
@@ -107,11 +108,19 @@ let lives = 2;
 let fliesEaten = 0;
 let collisionCount = 0;
 
+let hasMilestone15 = false;
+let hasWon = false;
+
 const bgImg = new Image();
 bgImg.src = "BACKGROUND_IMAGE_DATA"; 
 
 const mantisImg = new Image();
 mantisImg.src = "MANTIS_IMAGE_DATA";
+
+const bangloreImg = new Image();
+bangloreImg.src = "BANGLORE_IMAGE_DATA";
+
+let currentBgImg = bgImg;
 
 const gameOverMessages = [
     { main: "Bangalore is still far away...", sub: "Tap to try the journey again!" },
@@ -134,6 +143,9 @@ function resetGame() {
     lives = 2;
     fliesEaten = 0;
     collisionCount = 0;
+    hasMilestone15 = false;
+    hasWon = false;
+    currentBgImg = bgImg; 
     obstacles = [];
     food = [];
     hearts = [];
@@ -149,7 +161,7 @@ function resetGame() {
 function jump() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
-    if (gameState === "GAMEOVER") {
+    if (gameState === "GAMEOVER" || gameState === "VICTORY") {
         resetGame(); 
     } else if (gameState === "START") {
         gameState = "PLAYING"; 
@@ -163,7 +175,11 @@ function jump() {
         food = [];
         hearts = [];
         playSound('jump');
-        update(); // Force the animation loop to start running again
+        update(); 
+    } else if (gameState === "MILESTONE_15") {
+        gameState = "PLAYING";
+        playSound('jump');
+        update();
     } else {
         mantis.velocity = jumpForce;
         playSound('jump');
@@ -203,16 +219,37 @@ function handleDamage() {
     } else {
         gameState = "PAUSED";
         collisionCount++;
-        drawPauseScreen(); // Render the pause screen visually
+        drawPauseScreen(); 
     }
 }
 
 function update() {
-    if (gameState === "GAMEOVER" || gameState === "PAUSED") return; // Stop loop if game is over or paused
+    if (gameState === "GAMEOVER" || gameState === "PAUSED" || gameState === "MILESTONE_15" || gameState === "VICTORY") return; 
 
     if (gameState === "START") {
         drawStartScreen();
         requestAnimationFrame(update);
+        return;
+    }
+
+    // 15 Point Milestone Pause
+    if (mantis.score >= 15 && !hasMilestone15) {
+        hasMilestone15 = true;
+        gameState = "MILESTONE_15";
+        drawMilestoneScreen();
+        return; 
+    }
+
+    // 45 Point Background Swap
+    if (mantis.score >= 45) {
+        currentBgImg = bangloreImg;
+    }
+
+    // 50 Point Victory
+    if (mantis.score >= 50 && !hasWon) {
+        hasWon = true;
+        gameState = "VICTORY";
+        drawVictoryScreen();
         return;
     }
 
@@ -223,7 +260,7 @@ function update() {
     // Hit floor or ceiling
     if (mantis.y + mantis.height >= canvas.height || mantis.y < 0) {
         handleDamage();
-        return; // Break out of update loop
+        return; 
     }
 
     // Scroll Background
@@ -253,7 +290,7 @@ function update() {
 
     if (hitObstacle) {
         handleDamage();
-        return; // Break out of update loop
+        return; 
     }
 
     // Food (Flies) Collision
@@ -292,9 +329,9 @@ function update() {
 
 // 4. Render 
 function draw() {
-    if (bgImg.src && bgImg.src.startsWith("data:image")) {
-        ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
-        ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
+    if (currentBgImg.src && currentBgImg.src.startsWith("data:image")) {
+        ctx.drawImage(currentBgImg, bgX, 0, canvas.width, canvas.height);
+        ctx.drawImage(currentBgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
     } else {
         ctx.fillStyle = "#87CEEB";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -386,6 +423,22 @@ function drawStartScreen() {
     ctx.fillText("Glide through the gaps in the obstacles.", canvas.width / 2, canvas.height / 2 + 45);
 }
 
+function drawMilestoneScreen() {
+    draw();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#4caf50"; // Nice green color
+    ctx.textAlign = "center";
+    
+    ctx.font = "bold 24px 'Segoe UI', sans-serif";
+    ctx.fillText("30% of the journey", canvas.width / 2, canvas.height / 2 - 25);
+    ctx.fillText("is complete!", canvas.width / 2, canvas.height / 2 + 5);
+    
+    ctx.font = "16px 'Segoe UI', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("Tap to continue the journey.", canvas.width / 2, canvas.height / 2 + 50);
+}
+
 function drawPauseScreen() {
     draw();
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -404,6 +457,31 @@ function drawPauseScreen() {
     ctx.font = "14px 'Segoe UI', sans-serif";
     ctx.fillStyle = "#e0e0e0";
     ctx.fillText("Tap to continue flight...", canvas.width / 2, canvas.height / 2 + 55);
+}
+
+function drawVictoryScreen() {
+    draw();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = "center";
+    
+    ctx.fillStyle = "#FFD700"; // Gold
+    ctx.font = "bold 32px 'Segoe UI', sans-serif";
+    ctx.fillText("Touchdown!", canvas.width / 2, canvas.height / 2 - 50);
+    
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "16px 'Segoe UI', sans-serif";
+    // Splitting across two lines so it doesn't run off the screen
+    ctx.fillText("Bok has successfully completed", canvas.width / 2, canvas.height / 2 - 5);
+    ctx.fillText("his epic quest to VJ!", canvas.width / 2, canvas.height / 2 + 20);
+    
+    ctx.fillStyle = "#FFD700"; // Gold
+    ctx.font = "bold 28px 'Segoe UI', sans-serif";
+    ctx.fillText("Victory!", canvas.width / 2, canvas.height / 2 + 70);
+    
+    ctx.fillStyle = "#a0a0a0";
+    ctx.font = "13px 'Segoe UI', sans-serif";
+    ctx.fillText("Tap to play again.", canvas.width / 2, canvas.height / 2 + 120);
 }
 
 function endGame() {
@@ -430,5 +508,6 @@ setTimeout(update, 100);
 
 game_html = game_html.replace("BACKGROUND_IMAGE_DATA", bg_img_data)
 game_html = game_html.replace("MANTIS_IMAGE_DATA", mantis_img_data)
+game_html = game_html.replace("BANGLORE_IMAGE_DATA", banglore_img_data)
 
 components.html(game_html, height=580)
